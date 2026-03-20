@@ -569,7 +569,8 @@ if (emailForm) {
                     </div>
                     <div style="padding: 20px;">
                         <p style="font-size: 14px; margin: 0 0 10px 0; color: #374151;"><strong>Dear ${member.name},</strong></p>
-                        <p style="font-size: 13px; margin: 0 0 15px 0; color: #4B5563; line-height: 1.4;">This is a system-generated notification regarding your pending library dues.</p>
+                        <p style="font-size: 13px; margin: 0 0 15px 0; color: #4B5563; line-height: 1.4;">Dear Member,
+This is to inform you that your ward’s library fee is still pending. Kindly clear the due amount at the earliest..</p>
                         <div style="background-color: #FEF2F2; border: 1px solid #FCA5A5; padding: 10px 15px; border-radius: 6px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;">
                             <span style="font-size: 14px; color: #991B1B; font-weight: 600;">⚠️ Outstanding Amount:</span>
                             <span style="font-size: 18px; font-weight: bold; color: #DC2626;">₹${globalFineAmountForEmail}</span>
