@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Books | Library System</title>
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .bulk-input { padding: 8px; border: 1px solid #ddd; border-radius: 4px; width: 100%; outline: none; font-size: 14px; }
+        .bulk-input:focus { border-color: #3498db; }
+        .header-actions { display: flex; gap: 10px; }
+        .page-header { display: flex; justify-content: space-between; align-items: center; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        .badge-green { background: #e8f5e9; color: #2e7d32; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: bold; }
+        .badge-red { background: #ffebee; color: #c62828; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: bold; }
+        .btn-filter { background: #eff6ff; color: #3b82f6; border: 1px solid #bfdbfe; font-weight: 600; padding: 8px 16px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: 0.2s; }
+        
+        /* 🟢 NEW CSS FOR BOOK FORM GRID 🟢 */
+        .book-form-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; }
+        .book-form-grid .full-width { grid-column: span 4; }
+        .book-form-grid .half-width { grid-column: span 2; }
+        .input-with-btn { display: flex; gap: 5px; }
+        .btn-plus { background: #eff6ff; border: 1px solid #bfdbfe; color: #3b82f6; padding: 8px 12px; border-radius: 4px; cursor: pointer; transition: 0.2s; }
+        .btn-plus:hover { background: #3b82f6; color: white; }
+        .form-section-title { grid-column: span 4; margin-top: 15px; margin-bottom: 5px; padding-bottom: 5px; border-bottom: 2px solid #eee; font-size: 16px; color: #2c3e50; }
+        
+        @media(max-width: 900px) { .book-form-grid { grid-template-columns: repeat(2, 1fr); } .book-form-grid .full-width, .book-form-grid .half-width { grid-column: span 2; } }
+
+        /* 🟢 FIX SELECT2 HEIGHT TO MATCH INPUTS 🟢 */
+        .select2-container .select2-selection--single { height: 36px; border: 1px solid #ddd; border-radius: 4px; display: flex; align-items: center; }
+        .select2-container--default .select2-selection--single .select2-selection__arrow { height: 34px; }
+    </style>
+</head>
+<body class="page-body">
+
+    <div class="page-header animated-box">
+        <div class="header-text">
+            <h2 style="margin:0;"><i class="fa-solid fa-book" style="color: #3498db;"></i> Book Catalog</h2>
+            <p style="margin: 5px 0 0 0; color: #7f8c8d; font-size: 0.9rem;">Manage library collection and inventory</p>
+        </div>
+       <div class="header-actions">
+            <button class="btn btn-success" onclick="exportBooksToExcel()" style="background-color: #27ae60; border: none; color: white;"><i class="fa-solid fa-file-csv"></i> Export</button>
+            <button class="btn btn-primary" onclick="openBookModal()"><i class="fa-solid fa-book-medical"></i> Add Book</button>
+            <button class="btn btn-success" onclick="openBulkUpdateModal()"><i class="fa-solid fa-table-list"></i> Bulk Update</button>
+        </div>
+    </div>
+
+    <div class="card animated-box" style="overflow-x: auto;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <h3 style="margin: 0;">Library Inventory</h3>
+                <button class="btn-filter" onclick="openFilterModal()"><i class="fa-solid fa-filter"></i> Filters</button>
+                <div style="position: relative;">
+                    <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #9ca3af;"></i>
+                    <input type="text" id="bookSearch" placeholder="Search Title, Author or ID..." onkeyup="renderBooks()" style="padding: 8px 10px 8px 32px; border: 1px solid #ccc; border-radius: 6px; outline: none; width: 250px;">
+                </div>
+            </div>
+            <div style="font-size: 1rem; font-weight: bold; color: #555;">Total Books: <span id="bookCountBadge" style="background: #3498db; color: white; padding: 4px 10px; border-radius: 12px; font-size: 0.9rem;">0</span></div>
+        </div>
+        <hr style="margin: 0 0 15px 0; border:0; border-top:1px solid #eee;">
+        <table>
+            <thead>
+                <tr>
+                    <th>Book ID</th>
+                    <th>Book Title</th>
+                    <th>Author</th>
+                    <th>Availability</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="bookTableBody"></tbody>
+        </table>
+    </div>
+
+    <div class="modal-overlay" id="bookModal">
+        <div class="modal-box" style="width: 1000px; max-width: 95%; max-height: 90vh; overflow-y: auto;">
+            <div class="modal-header">
+                <h3 id="modalTitle"><i class="fa-solid fa-book-medical"></i> Add New Book</h3>
+                <i class="fa-solid fa-xmark close-btn" onclick="closeBookModal()"></i>
+            </div>
+            <form id="bookForm" style="padding: 20px;">
+                <input type="hidden" id="oldBookId">
+                <div class="book-form-grid">
+                    <div class="form-group half-width">
+                        <label>Book ID / Accession No.*</label>
+                        <input type="text" id="b_id" required placeholder="e.g. B001">
+                    </div>
+                    <div class="form-group half-width">
+                        <label>Library*</label>
+                        <select id="b_library" class="searchable-select" style="width:100%;" required>
+                            <option value="Main Library">Main Library</option>
+                            <option value="Reference Section">Reference Section</option>
+                            <option value="Childrens Section">Children's Section</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group half-width">
+                        <label>Book Title*</label>
+                        <input type="text" id="b_title" required placeholder="Enter Book Title">
+                    </div>
+                    <div class="form-group half-width">
+                        <label>Subtitle</label>
+                        <input type="text" id="b_subtitle" placeholder="Enter Subtitle">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Author</label>
+                        <div class="input-with-btn">
+                            <select id="b_author" class="searchable-select" style="width:100%;"><option value="">Select Author</option></select>
+                            <button type="button" class="btn-plus" onclick="openMasterModal('Author')"><i class="fa-solid fa-plus"></i></button>
+                        </div>
+                    </div>
+ 
+                    <div class="form-group">
+                        <label>Co-author</label>
+                        <div class="input-with-btn">
+                            <select id="b_coauthor" class="searchable-select" style="width:100%;"><option value="">Select Co-author</option></select>
+                            <button type="button" class="btn-plus" onclick="openMasterModal('CoAuthor')"><i class="fa-solid fa-plus"></i></button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Spine</label>
+                        <input type="text" id="b_spine" placeholder="Enter Spine">
+                    </div>
+                    <div class="form-group">
+                        <label>Publisher</label>
+                        <div class="input-with-btn">
+                            <select id="b_publisher" class="searchable-select" style="width:100%;"><option value="">Select Publisher</option></select>
+                            <button type="button" class="btn-plus" onclick="openMasterModal('Publisher')"><i class="fa-solid fa-plus"></i></button>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Book Type*</label>
+                        <select id="b_booktype" required>
+                            <option value="Textbook">Textbook</option>
+                            <option value="Reference Book">Reference Book</option>
+                            <option value="Magazine">Magazine / Journal</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Subject</label>
+                        <div class="input-with-btn">
+                            <select id="b_subject" class="searchable-select" style="width:100%;"><option value="">Select Subject</option></select>
+                            <button type="button" class="btn-plus" onclick="openMasterModal('Subject')"><i class="fa-solid fa-plus"></i></button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>ISBN No.</label>
+                        <input type="text" id="b_isbn" placeholder="Enter ISBN No.">
+                    </div>
+                    <div class="form-group">
+                        <label>DDC</label>
+                        <div class="input-with-btn">
+                            <select id="b_ddc" class="searchable-select" style="width:100%;"><option value="">Select DDC</option></select>
+                            <button type="button" class="btn-plus" onclick="openMasterModal('DDC')"><i class="fa-solid fa-plus"></i></button>
+                        </div>
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label>Keywords</label>
+                        <textarea id="b_keywords" rows="2" placeholder="Enter Keywords separated by comma"></textarea>
+                    </div>
+
+                    <div class="form-section-title">Other Details</div>
+                    
+                    <div class="form-group">
+                        <label>Year of Publication</label>
+                        <input type="text" id="b_year" placeholder="Enter Year">
+                    </div>
+                    <div class="form-group">
+                        <label>Edition No.</label>
+                        <input type="text" id="b_edition" placeholder="Enter Edition No.">
+                    </div>
+                    <div class="form-group">
+                        <label>Genre</label>
+                        <select id="b_genre"><option value="">Select Genre</option><option value="Fiction">Fiction</option><option value="Non-Fiction">Non-Fiction</option><option value="Science">Science</option></select>
+                    </div>
+                    <div class="form-group">
+                        <label>Language</label>
+                        <select id="b_language"><option value="English">English</option><option value="Hindi">Hindi</option><option value="Spanish">Spanish</option></select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Shelf-Rack</label>
+                        <select id="b_shelf" class="searchable-select" style="width:100%;"><option value="">Select Shelf-Rack</option><option value="Rack A">Rack A</option><option value="Rack B">Rack B</option></select>
+                    </div>
+                    <div class="form-group">
+                        <label>Shelf-Rack Position</label>
+                        <input type="text" id="b_shelfpos" placeholder="Enter Position">
+                    </div>
+                    <div class="form-group">
+                        <label>No. of Pages</label>
+                        <input type="number" id="b_pages" placeholder="Enter Pages">
+                    </div>
+                    <div class="form-group" style="display: flex; flex-direction: column; justify-content: center;">
+                        <label>Donate Book</label>
+                        <label class="switch" style="margin-top: 5px;">
+                            <input type="checkbox" id="b_donate">
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Supplier</label>
+                        <div class="input-with-btn">
+                            <select id="b_supplier" class="searchable-select" style="width:100%;"><option value="">Select Supplier</option></select>
+                            <button type="button" class="btn-plus" onclick="openMasterModal('Supplier')"><i class="fa-solid fa-plus"></i></button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Purchase Date</label>
+                        <input type="date" id="b_purchasedate">
+                    </div>
+                    <div class="form-group">
+                        <label>Bill Date</label>
+                        <input type="date" id="b_billdate">
+                    </div>
+                    <div class="form-group"></div> <div class="form-group">
+                        <label>Bill No.</label>
+                        <input type="text" id="b_billno" placeholder="Enter Bill No.">
+                    </div>
+                    <div class="form-group">
+                        <label>Currency</label>
+                        <select id="b_currency"><option value="INR">INR</option><option value="USD">USD</option></select>
+                    </div>
+                    <div class="form-group half-width">
+                        <label>Price</label>
+                        <input type="number" id="b_price" placeholder="Enter Price">
+                    </div>
+                </div>
+
+                <div style="margin-top: 20px; display: flex; gap: 10px; justify-content: flex-end;">
+                    <button type="button" class="btn btn-secondary" onclick="closeBookModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary" style="padding: 10px 30px;">Save Book</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="masterModal_Author" style="z-index: 2000;">
+        <div class="modal-box" style="width: 400px;"><div class="modal-header"><h3>Author Details</h3></div>
+            <div style="padding:20px;">
+                <input type="hidden" id="m_author_type" value="Author"> <input type="text" id="m_author_fname" class="bulk-input" placeholder="First Name" style="margin-bottom:10px;">
+                <input type="text" id="m_author_lname" class="bulk-input" placeholder="Last Name" style="margin-bottom:10px;">
+                <input type="text" id="m_author_spine" class="bulk-input" placeholder="Spine Author Mark" style="margin-bottom:20px;">
+                <div style="display:flex; justify-content:flex-end; gap:10px;">
+                    <button class="btn btn-secondary" onclick="closeMasterModal('Author')">Cancel</button>
+                    <button class="btn btn-primary" onclick="saveMasterData('Authors', 'm_author_fname', 'm_author_lname', 'm_author_spine')">Apply</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-overlay" id="masterModal_Publisher" style="z-index: 2000;">
+        <div class="modal-box" style="width: 400px;"><div class="modal-header"><h3>Publisher Details</h3></div>
+            <div style="padding:20px;">
+                <input type="text" id="m_pub_name" class="bulk-input" placeholder="Name" style="margin-bottom:10px;">
+                <input type="text" id="m_pub_phone" class="bulk-input" placeholder="Mobile No." style="margin-bottom:10px;">
+                <input type="text" id="m_pub_addr" class="bulk-input" placeholder="Address" style="margin-bottom:10px;">
+                <input type="text" id="m_pub_city" class="bulk-input" placeholder="City" style="margin-bottom:10px;">
+                <input type="text" id="m_pub_state" class="bulk-input" placeholder="State" style="margin-bottom:10px;">
+                <input type="text" id="m_pub_country" class="bulk-input" placeholder="Country" style="margin-bottom:20px;">
+                <div style="display:flex; justify-content:flex-end; gap:10px;">
+                    <button class="btn btn-secondary" onclick="closeMasterModal('Publisher')">Cancel</button>
+                    <button class="btn btn-primary" onclick="saveMasterData('Publishers', 'm_pub_name', 'm_pub_phone', 'm_pub_addr', 'm_pub_city', 'm_pub_state', 'm_pub_country')">Apply</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-overlay" id="masterModal_Subject" style="z-index: 2000;">
+        <div class="modal-box" style="width: 400px;"><div class="modal-header"><h3>Subjects Details</h3></div>
+            <div style="padding:20px;">
+                <input type="text" id="m_sub_name" class="bulk-input" placeholder="Name" style="margin-bottom:10px;">
+                <input type="text" id="m_sub_code" class="bulk-input" placeholder="Code" style="margin-bottom:20px;">
+                <div style="display:flex; justify-content:flex-end; gap:10px;">
+                    <button class="btn btn-secondary" onclick="closeMasterModal('Subject')">Cancel</button>
+                    <button class="btn btn-primary" onclick="saveMasterData('Subjects', 'm_sub_name', 'm_sub_code')">Apply</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-overlay" id="masterModal_DDC" style="z-index: 2000;">
+        <div class="modal-box" style="width: 400px;"><div class="modal-header"><h3>DDC Details</h3></div>
+            <div style="padding:20px;">
+                <input type="text" id="m_ddc_code" class="bulk-input" placeholder="Code" style="margin-bottom:10px;">
+                <input type="text" id="m_ddc_desc" class="bulk-input" placeholder="Description No." style="margin-bottom:20px;">
+                <div style="display:flex; justify-content:flex-end; gap:10px;">
+                    <button class="btn btn-secondary" onclick="closeMasterModal('DDC')">Cancel</button>
+                    <button class="btn btn-primary" onclick="saveMasterData('DDCs', 'm_ddc_code', 'm_ddc_desc')">Apply</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-overlay" id="masterModal_Supplier" style="z-index: 2000;">
+        <div class="modal-box" style="width: 400px;"><div class="modal-header"><h3>Supplier Details</h3></div>
+            <div style="padding:20px;">
+                <input type="text" id="m_sup_name" class="bulk-input" placeholder="Vendor Name" style="margin-bottom:10px;">
+                <input type="text" id="m_sup_code" class="bulk-input" placeholder="Vendor Code" style="margin-bottom:10px;">
+                <input type="text" id="m_sup_cperson" class="bulk-input" placeholder="Contact Person" style="margin-bottom:10px;">
+                <input type="text" id="m_sup_phone" class="bulk-input" placeholder="Contact No." style="margin-bottom:10px;">
+                <input type="text" id="m_sup_email" class="bulk-input" placeholder="Email ID" style="margin-bottom:10px;">
+                <input type="text" id="m_sup_addr" class="bulk-input" placeholder="Address" style="margin-bottom:20px;">
+                <div style="display:flex; justify-content:flex-end; gap:10px;">
+                    <button class="btn btn-secondary" onclick="closeMasterModal('Supplier')">Cancel</button>
+                    <button class="btn btn-primary" onclick="saveMasterData('Suppliers', 'm_sup_name', 'm_sup_code', 'm_sup_cperson', 'm_sup_phone', 'm_sup_email', 'm_sup_addr')">Apply</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<div class="modal-overlay" id="issuedWarningModal">
+        <div class="modal-box" style="width: 450px; text-align: center; border-top: 5px solid #e74c3c;">
+            <div class="modal-header" style="justify-content: center; position: relative;">
+                <h3 style="color: #c62828; margin: 0;"><i class="fa-solid fa-triangle-exclamation"></i> Action Blocked</h3>
+                <i class="fa-solid fa-xmark close-btn" onclick="closeIssuedWarningModal()" style="position: absolute; right: 15px; top: 15px;"></i>
+            </div>
+            <div style="padding: 20px;">
+                <p style="font-weight: bold; color: #e74c3c; font-size: 16px; margin-top: 0;">This book is currently ISSUED!</p>
+                <p style="color: #555; font-size: 14px; margin-bottom: 20px;">Editing or deleting an active book may cause data mismatch.</p>
+                
+                <div style="background: #fff5f5; padding: 15px; border-radius: 6px; text-align: left; border: 1px solid #ffcdd2; margin-bottom: 20px;">
+                    <h4 style="margin-top: 0; color: #c62828; border-bottom: 1px solid #ffcdd2; padding-bottom: 5px;"><i class="fa-solid fa-circle-info"></i> Issue Details</h4>
+                    <p style="margin: 5px 0; font-size: 14px;"><strong>Book ID:</strong> <span id="warnBookId"></span></p>
+                    <p style="margin: 5px 0; font-size: 14px;"><strong>Book Name:</strong> <span id="warnBookTitle"></span></p>
+                    <p style="margin: 5px 0; font-size: 14px;"><strong>Issued To:</strong> <span id="warnMemberName"></span> (<span id="warnMemberId"></span>)</p>
+                    <hr style="border: 0; border-top: 1px dashed #ffcdd2; margin: 8px 0;">
+                    <p style="margin: 5px 0; font-size: 14px;"><strong>Issue Date:</strong> <span id="warnIssueDate"></span></p>
+                    <p style="margin: 5px 0; font-size: 14px;"><strong>Due Date:</strong> <span id="warnDueDate"></span></p>
+                    <p style="margin: 5px 0; font-size: 14px; background: #ffebee; padding: 4px; border-radius: 4px;"><strong>Live Fine:</strong> <span id="warnLiveFine"></span></p>
+                </div>
+
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn btn-secondary" onclick="closeIssuedWarningModal()" style="flex: 1; background-color: #7f8c8d; color: white;">Understood</button>
+                    <button id="btnBruteEdit" class="btn btn-primary" onclick="forceEditBook()" style="flex: 1; background-color: #f39c12; border: none; display: none;"><i class="fa-solid fa-unlock-keyhole"></i> Brute Edit</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="filterModal">
+        <div class="modal-box" style="width: 400px;">
+            <div class="modal-header"><h3><i class="fa-solid fa-filter"></i> Filter Books</h3><i class="fa-solid fa-xmark close-btn" onclick="closeFilterModal()"></i></div>
+            <div style="padding: 20px;">
+                <label style="font-weight: bold; display:block; margin-bottom:10px;">Availability Status</label>
+                <select id="statusFilter" style="width: 100%; padding: 10px; border-radius: 6px; margin-bottom: 25px;"><option value="All">All Books</option><option value="Available">Available Only</option><option value="Issued">Issued / Out of Stock</option></select>
+                <div style="display: flex; gap: 10px;"><button class="btn btn-primary" style="flex:2;" onclick="applyFilters()">Apply</button><button class="btn btn-danger" style="flex:1;" onclick="clearFilters()">Reset</button></div>
+            </div>
+        </div>
+    </div>
+
+<div class="modal-overlay" id="bulkUpdateModal">
+        <div class="modal-box" style="width: 1400px; max-width: 98%;">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-pen-to-square"></i> Bulk Update Books</h3>
+                <i class="fa-solid fa-xmark close-btn" onclick="closeBulkUpdateModal()"></i>
+            </div>
+            <div style="padding: 20px;">
+                <div style="max-height: 65vh; overflow-x: auto; overflow-y: auto; border: 1px solid #eee; border-radius: 8px;">
+                    <table style="min-width: 3500px; border-collapse: collapse;">
+                        <thead style="position: sticky; top: 0; background: #f8f9fa; z-index: 10; box-shadow: 0 2px 2px rgba(0,0,0,0.1);">
+                            <tr>
+                                <th style="padding: 12px; border-right: 1px solid #eee;">Book ID</th>
+                                <th style="padding: 12px; border-right: 1px solid #eee;">Library</th>
+                                <th style="padding: 12px; border-right: 1px solid #eee;">Book Title</th>
+                                <th style="padding: 12px; border-right: 1px solid #eee;">Subtitle</th>
+                                <th style="padding: 12px; border-right: 1px solid #eee;">Author</th>
+                                <th style="padding: 12px; border-right: 1px solid #eee;">Co-author</th>
+                                <th style="padding: 12px; border-right: 1px solid #eee;">Spine</th>
+                                <th style="padding: 12px; border-right: 1px solid #eee;">Publisher</th>
+                                <th style="padding: 12px; border-right: 1px solid #eee;">Book Type</th>
+                                <th style="padding: 12px; border-right: 1px solid #eee;">Subject</th>
+                                <th style="padding: 12px; border-right: 1px solid #eee;">ISBN No.</th>
+                                <th style="padding: 12px; border-right: 1px solid #eee;">DDC</th>
+                                <th style="padding: 12px; border-right: 1px solid #eee;">Keywords</th>
+                                <th style="padding: 12px; border-right: 1px solid #eee;">Year</th>
+                                <th style="padding: 12px; border-right: 1px solid #eee;">Edition No.</th>
+                                <th style="padding: 12px; border-right: 1px solid #eee;">Genre</th>
+                                <th style="padding: 12px; border-right: 1px solid #eee;">Language</th>
+                                <th style="padding: 12px; border-right: 1px solid #eee;">Shelf-Rack</th>
+                                <th style="padding: 12px; border-right: 1px solid #eee;">Shelf Pos</th>
+                                <th style="padding: 12px; border-right: 1px solid #eee;">Pages</th>
+                                <th style="padding: 12px; border-right: 1px solid #eee;">Donate</th>
+                                <th style="padding: 12px; border-right: 1px solid #eee;">Supplier</th>
+                                <th style="padding: 12px; border-right: 1px solid #eee;">Purchase Date</th>
+                                <th style="padding: 12px; border-right: 1px solid #eee;">Bill Date</th>
+                                <th style="padding: 12px; border-right: 1px solid #eee;">Bill No.</th>
+                                <th style="padding: 12px; border-right: 1px solid #eee;">Currency</th>
+                                <th style="padding: 12px;">Price</th>
+                            </tr>
+                        </thead>
+           
+                         <tbody id="bulkUpdateTableBody"></tbody>
+                    </table>
+                </div>
+                <button class="btn btn-primary w-100" id="saveBulkBtn" onclick="saveBulkUpdate()" style="margin-top: 15px; padding: 12px; font-size: 16px;">
+                    <i class="fa-solid fa-cloud-arrow-up"></i> Update All Changes
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="books.js"></script>
+</body>
+</html>

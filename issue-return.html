@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Issue/Return</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <style>
+        /* Smooth Animation for Modals */
+        @keyframes popIn {
+            0% { transform: scale(0.8); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .modal-box {
+            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+        
+        /* Responsive Fixes for Mobile */
+        @media (max-width: 768px) {
+            .grid-4, .grid-2 { grid-template-columns: 1fr !important; }
+            .modal-box { width: 95% !important; padding: 15px !important; }
+            .page-header { flex-direction: column; align-items: flex-start; gap: 10px; }
+            table { font-size: 0.85rem; }
+            th, td { padding: 8px 5px !important; }
+        }
+    </style>
+</head>
+<body class="page-body">
+    <div class="page-header">
+        <h2><i class="fa-solid fa-book-circle-arrow-right"></i> Issue & Return Book</h2>
+    </div>
+
+    <div class="card">
+        <h3>Issue a Book</h3>
+        <hr style="margin: 10px 0; border:0; border-top:1px solid #eee;">
+        <form id="issueForm" class="grid-4">
+            <div class="form-group">
+                <label>Transaction ID</label>
+                <input type="text" id="txnId" readonly style="background:#e9ecef;">
+            </div>
+            <div class="form-group">
+                <label>Select Book</label>
+                <select id="bookSelect" required></select>
+            </div>
+            <div class="form-group">
+                <label>Select Member</label>
+                <select id="memberSelect" required onchange="autoFillMemberName()">
+                    <option value="">Loading Members...</option>
+                </select>
+            </div>
+            <div class="form-group" style="position: relative;">
+                <label>Member Name</label>
+                <div style="display: flex; gap: 10px;">
+                    <input type="text" id="memberName" readonly style="background:#e9ecef; flex: 1;" placeholder="Auto-filled">
+                    <button type="button" id="btnPaymentHistory" class="btn" style="display:none; background-color: #8e44ad; color: white; padding: 0 15px; border: none; font-weight: bold; border-radius: 4px; cursor: pointer; transition: 0.3s; box-shadow: 0 2px 5px rgba(142, 68, 173, 0.3);" onclick="showPaymentHistory()" onmouseover="this.style.backgroundColor='#732d91'" onmouseout="this.style.backgroundColor='#8e44ad'">
+                        <i class="fa-solid fa-clock-rotate-left"></i> Payment History
+                    </button>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Issue Date</label>
+                <input type="date" id="issueDate" required>
+            </div>
+            <div class="form-group">
+                <label>Due Date</label>
+                <input type="date" id="dueDate" required>
+            </div>
+            <div class="form-group">
+                <label>Issued By (Staff)</label>
+                <input type="text" id="issuedBy" required placeholder="Staff Name">
+            </div>
+
+            <div id="fineAlertContainer" style="grid-column: 1 / -1; display: none; background: #ffebee; border-left: 4px solid #f44336; padding: 15px; border-radius: 4px; margin-bottom: 15px;">
+                <h4 style="color: #d32f2f; margin-top: 0; margin-bottom: 10px;"><i class="fa-solid fa-triangle-exclamation"></i> Unpaid Dues Alert</h4>
+                <div id="fineDetailsBody" style="font-size: 0.9rem; color: #333; overflow-x: auto;">
+                </div>
+            </div>
+
+            <div class="form-group" style="justify-content: flex-end; grid-column: 1 / -1;">
+                <button type="submit" class="btn btn-success w-100">Issue Book</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="card" style="overflow-x: auto;">
+        <h3 id="historyTitle">Member Library History</h3>
+        <hr style="margin: 10px 0; border:0; border-top:1px solid #eee;">
+        <table style="min-width: 600px;">
+            <thead>
+                <tr>
+                    <th>Txn ID</th>
+                    <th>Book ID</th>
+                    <th>Member</th>
+                    <th>Due Date</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="issuedTableBody">
+            </tbody>
+        </table>
+    </div>
+
+    <div class="modal-overlay" id="returnModal">
+        <div class="modal-box" style="width: 500px;">
+            <div class="modal-header">
+                <h3>Process Book Return</h3>
+                <i class="fa-solid fa-xmark close-btn" onclick="closeModal()"></i>
+            </div>
+            <form id="returnForm">
+                <input type="hidden" id="retTxnId">
+                <input type="hidden" id="retDueDate">
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label>Return Date</label>
+                        <input type="date" id="retDate" required onchange="calculateFine()">
+                    </div>
+                    <div class="form-group">
+                        <label>Days Overdue</label>
+                        <input type="number" id="retOverdue" readonly style="background:#e9ecef;">
+                    </div>
+                    <div class="form-group">
+                        <label>Fine Amount (₹)</label>
+                        <input type="number" id="retFine" value="0">
+                    </div>
+                    <div class="form-group">
+                        <label>Payment Status</label>
+                        <select id="retPayment">
+                            <option value="Paid">Paid</option>
+                            <option value="Unpaid">Unpaid</option>
+                            <option value="N/A">N/A (No Fine)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Book Condition</label>
+                    <select id="retCondition" required>
+                        <option value="Good">Good</option>
+                        <option value="Damaged">Damaged</option>
+                        <option value="Lost">Lost</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Remarks</label>
+                    <input type="text" id="retRemarks" placeholder="Any comments...">
+                </div>
+                <button type="submit" class="btn btn-primary w-100" style="margin-top: 15px;">Confirm Return</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="paymentHistoryModal">
+        <div class="modal-box" style="width: 700px; max-width: 95%;">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-file-invoice-dollar"></i> Member Payment History</h3>
+                <i class="fa-solid fa-xmark close-btn" onclick="closePaymentHistoryModal()"></i>
+            </div>
+            <div style="max-height: 400px; overflow-y: auto; padding: 15px;">
+                <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem; min-width: 500px;">
+                    <thead>
+                        <tr style="background:#f8f9fa; border-bottom: 2px solid #ddd;">
+                            <th style="padding: 10px;">Txn ID</th>
+                            <th style="padding: 10px;">Book ID</th>
+                            <th style="padding: 10px;">Late By</th>
+                            <th style="padding: 10px;">Fine Amt</th>
+                            <th style="padding: 10px;">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="paymentHistoryBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="paymentCollectionModal">
+        <div class="modal-box" style="width: 450px; text-align: center;">
+            <div class="modal-header" style="justify-content: center; position: relative;">
+                <h3><i class="fa-solid fa-indian-rupee-sign" style="color:#2ecc71;"></i> Collect Payment</h3>
+                <i class="fa-solid fa-xmark close-btn" onclick="closePaymentCollectionModal()" style="position: absolute; right: 15px; top: 15px;"></i>
+            </div>
+            <form id="paymentCollectionForm" style="padding: 15px; text-align: left;">
+                <input type="hidden" id="payMemberId">
+                <div class="form-group">
+                    <label>Total Fine Due (₹)</label>
+                    <input type="number" id="payTotalDue" readonly style="background:#ffebee; color:#c62828; font-weight:bold; font-size:1.1rem; border-color:#ffcdd2;">
+                </div>
+                <div class="form-group">
+                    <label>Payment Date</label>
+                    <input type="date" id="payDate" required style="font-weight:bold; color:#333;">
+                </div>
+                <div class="form-group">
+                    <label>Amount Paying Now (₹)</label>
+                    <input type="number" id="payAmountNow" required min="1" oninput="calculateBalance()" style="font-weight:bold; font-size:1.1rem; border-color:#2ecc71;">
+                </div>
+                <div class="form-group">
+                    <label>Remaining Balance (₹)</label>
+                    <input type="number" id="payBalance" readonly style="background:#e9ecef; font-weight:bold; color:#555;">
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button type="submit" class="btn btn-success w-100" style="flex: 2;"><i class="fa-solid fa-check-circle"></i> Confirm Payment</button>
+                    <button type="button" class="btn btn-secondary w-100" style="flex: 1;" onclick="closePaymentCollectionModal()">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+    <div class="modal-overlay" id="emailModal">
+        <div class="modal-box" style="width: 550px;">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-envelope" style="color:#3498db;"></i> Send Communication</h3>
+                <i class="fa-solid fa-xmark close-btn" onclick="closeEmailModal()"></i>
+            </div>
+            <form id="emailForm" style="padding: 15px;">
+                
+                <div id="emailWarningMsg" style="display: none; background-color: #fff3cd; border-left: 4px solid #f1c40f; padding: 10px 15px; margin-bottom: 15px; border-radius: 4px;">
+                    <p style="margin: 0; color: #856404; font-size: 13px; font-weight: bold;"><i class="fa-solid fa-triangle-exclamation"></i> No Email Found!</p>
+                    <p style="margin: 3px 0 0 0; color: #856404; font-size: 12px;">Enter an email address below. It will be automatically saved to the member's profile and the mail will be sent.</p>
+                </div>
+
+                <div style="display: flex; gap: 10px;">
+                    <div class="form-group" style="flex: 1;">
+                        <label>To (Member Email) <span style="color:red">*</span></label>
+                        <input type="email" id="emailTo" required placeholder="Enter email address...">
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                        <label>CC (Optional)</label>
+                        <input type="email" id="emailCc" placeholder="e.g. admin@school.com">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Subject</label>
+                    <input type="text" id="emailSubject" required placeholder="e.g. Urgent Notice">
+                </div>
+                <div class="form-group">
+                    <label>Add a Custom Note (Optional)</label>
+                    <textarea id="emailMessage" rows="3" style="width:100%; padding:10px; border:1px solid #ccc; border-radius:4px; font-family:inherit; resize: vertical;" placeholder="Type any extra message here..."></textarea>
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 15px;">
+                    <button type="submit" id="btnSendEmail" class="btn btn-primary w-100" style="flex: 2; background-color: #3498db; border: none;"><i class="fa-solid fa-paper-plane"></i> Send Email</button>
+                    <button type="button" class="btn w-100" style="flex: 1; background-color: #7f8c8d; color: white; border: none; border-radius: 4px;" onclick="closeEmailModal()">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+
+<div class="modal-overlay" id="membershipInfoModal">
+        <div class="modal-box" style="width: 450px;">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-id-card" style="color:#8e44ad;"></i> Membership Details</h3>
+                <i class="fa-solid fa-xmark close-btn" onclick="closeMembershipInfoModal()"></i>
+            </div>
+            <div style="padding: 20px; font-size: 15px;">
+                <p style="margin-bottom:10px;"><strong>Name:</strong> <span id="infoMemberName"></span></p>
+                <p style="margin-bottom:10px;"><strong>Join Date:</strong> <span id="infoJoinDate"></span></p>
+                <p style="margin-bottom:10px;"><strong>Expiry Date:</strong> <span id="infoExpiryDate"></span></p>
+                <p style="margin-bottom:10px;"><strong>Status:</strong> <span id="infoStatusBadge"></span></p>
+                
+                <div style="margin-top: 25px; text-align: center;">
+                    <button class="btn w-100" onclick="sendExpiryReminderMail()" style="background-color: #8e44ad; color: white; border: none; padding: 10px; font-weight: bold;">
+                        <i class="fa-solid fa-envelope"></i> Send Expiry Reminder Email
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    
+
+
+    <script src="issue-return.js"></script>
+</body>
+</html>

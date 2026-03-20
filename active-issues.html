@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Active Issues | Library System</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .search-box { width: 100%; padding: 12px 15px; font-size: 16px; border: 1px solid #ddd; border-radius: 6px; margin-bottom: 15px; outline: none; }
+        .search-box:focus { border-color: #3498db; box-shadow: 0 0 5px rgba(52, 152, 219, 0.3); }
+        .badge-safe { background: #e8f5e9; color: #2e7d32; padding: 4px 10px; border-radius: 12px; font-size: 0.85rem; font-weight: bold; }
+        .badge-danger { background: #ffebee; color: #c62828; padding: 4px 10px; border-radius: 12px; font-size: 0.85rem; font-weight: bold; border: 1px solid #ffcdd2; }
+    </style>
+</head>
+<body class="page-body">
+
+    <div class="page-header animated-box">
+        <div class="header-text">
+            <h2 style="margin:0;"><i class="fa-solid fa-triangle-exclamation" style="color: #e67e22;"></i> Active Issues Dashboard</h2>
+            <p style="margin: 5px 0 0 0; color: #7f8c8d; font-size: 0.9rem;">Monitor unreturned books, due dates, and live fines</p>
+        </div>
+        <div>
+            <button class="btn btn-primary" onclick="fetchActiveIssues()" style="background-color: #3498db; border: none;">
+                <i class="fa-solid fa-arrows-rotate"></i> Refresh Data
+            </button>
+        </div>
+    </div>
+
+    <div class="card animated-box" style="overflow-x: auto;">
+        <input type="text" id="liveSearch" class="search-box" placeholder="🔍 Search by Member ID, Name, or Book ID..." onkeyup="renderTable()">
+        
+        <table>
+            <thead>
+                <tr style="background:#f4f6f7;">
+                    <th>Member Info</th>
+                    <th>Book ID</th>
+                    <th>Issue Date</th>
+                    <th>Due Date</th>
+                    <th>Live Fine</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody id="activeIssuesTableBody">
+                </tbody>
+        </table>
+    </div>
+
+    <script src="active-issues.js"></script>
+</body>
+</html>

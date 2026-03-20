@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Master Setup | Library System</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .setup-container { display: flex; gap: 20px; align-items: flex-start; }
+        .setup-sidebar { width: 250px; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); padding: 10px 0; overflow-y: auto; max-height: 85vh; border: 1px solid #e0e0e0; }
+        .setup-item { padding: 12px 20px; cursor: pointer; border-left: 4px solid transparent; font-weight: 500; color: #333; transition: 0.2s; display: flex; align-items: center; gap: 12px; font-size: 14.5px;}
+        .setup-item:hover { background: #f3f4f6; }
+        .setup-item.active { background: #eff6ff; color: #1a73e8; border-left: 4px solid #1a73e8; font-weight: 600; }
+        
+        .setup-content { flex-grow: 1; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: 1px solid #e0e0e0; min-height: 600px; display: flex; flex-direction: column; }
+        
+        .content-toolbar { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-bottom: 1px solid #eee; background: #fafafa; border-radius: 8px 8px 0 0; }
+        .toolbar-left { display: flex; align-items: center; }
+        .search-wrapper { position: relative; width: 250px; }
+        .search-wrapper i { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #9ca3af; }
+        .search-wrapper input { width: 100%; padding: 8px 10px 8px 32px; border: 1px solid #d1d5db; border-radius: 4px; outline: none; font-size: 13.5px; }
+        .search-wrapper input:focus { border-color: #3b82f6; }
+        
+        .toolbar-right { display: flex; align-items: center; gap: 10px; }
+        .btn-toolbar { padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 13px; display: flex; align-items: center; gap: 6px; transition: 0.2s; }
+        .btn-add { background: #3b82f6; color: white; }
+        .btn-add:hover { background: #2563eb; }
+        .btn-export { background: #eff6ff; color: #3b82f6; border: 1px solid #bfdbfe; }
+        .btn-export:hover { background: #dbeafe; }
+        .btn-bulk { background: #10b981; color: white; margin-right: 5px; }
+        .btn-bulk:hover { background: #059669; }
+
+        .pagination-text { font-size: 13px; color: #555; font-weight: 500; margin-left: 10px; display: flex; align-items: center; gap: 10px; }
+        .pagination-arrows i { cursor: pointer; color: #888; transition: 0.2s; }
+        .pagination-arrows i:hover { color: #333; }
+
+        .setup-table-wrapper { padding: 0; overflow-x: auto; flex-grow: 1; }
+        .setup-table { width: 100%; border-collapse: collapse; }
+        .setup-table th { background: #f4f6f7; color: #444; font-weight: 600; padding: 12px 20px; font-size: 13px; border-bottom: 2px solid #eee; text-align: left; }
+        .setup-table td { padding: 12px 20px; border-bottom: 1px solid #eee; font-size: 14px; color: #333; }
+        
+        .action-dropdown { position: relative; display: inline-block; }
+        .btn-action-trigger { background: #f3f4f6; border: none; color: #555; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; font-size: 14px; }
+        .btn-action-trigger:hover, .btn-action-trigger.active { background: #e5e7eb; color: #1a73e8; }
+        .action-menu { position: absolute; right: 0; top: 35px; background: white; border: 1px solid #eee; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border-radius: 6px; width: 140px; z-index: 1000; opacity: 0; visibility: hidden; transform: translateY(-10px); transition: 0.2s; }
+        .action-menu.show { opacity: 1; visibility: visible; transform: translateY(0); }
+        .action-menu a { display: block; padding: 10px 15px; color: #333; text-decoration: none; font-size: 13px; cursor: pointer; transition: 0.2s; }
+        .action-menu a i { width: 16px; text-align: center; margin-right: 8px; color: #777; }
+        .action-menu a:hover { background: #f8f9fa; }
+        .action-menu a.text-danger { color: #e74c3c; }
+        .action-menu a.text-danger i { color: #e74c3c; }
+        
+        .empty-state { text-align: center; padding: 80px 20px; display: none; }
+        .empty-state i { font-size: 4rem; color: #b0c4de; margin-bottom: 15px; }
+        .empty-state p { color: #555; font-size: 15px; font-weight: 500; }
+
+        .bulk-input { padding: 10px; border: 1px solid #d1d5db; border-radius: 4px; width: 100%; outline: none; font-size: 14px; margin-bottom: 15px; }
+        .bulk-input:focus { border-color: #1a73e8; }
+    </style>
+</head>
+<body class="page-body">
+
+    <div class="setup-container animated-box">
+        <div class="setup-sidebar" id="setupSidebar"></div>
+
+        <div class="setup-content">
+            <div class="content-toolbar">
+                <div class="toolbar-left">
+                    <button class="btn-toolbar" id="btnBackToShelfs" onclick="selectTab('Shelfs')" style="display: none; margin-right: 15px; background: white; color: #333; border: 1px solid #d1d5db;">
+                        <i class="fa-solid fa-arrow-left"></i> Back
+                    </button>
+                    <div class="search-wrapper">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <input type="text" id="setupSearch" placeholder="Search" onkeyup="renderTable(currentConfig.id)">
+                    </div>
+                </div>
+                <div class="toolbar-right">
+                    <button class="btn-toolbar btn-bulk" onclick="openSetupBulkUpdateModal()">
+                        <i class="fa-solid fa-table-list"></i> Bulk Update
+                    </button>
+                    <button class="btn-toolbar btn-add" onclick="openSetupModal()" id="btnAddRecord">
+                        <i class="fa-solid fa-plus"></i> Add
+                    </button>
+                    <button class="btn-toolbar btn-export" onclick="exportSetupData()">
+                        <i class="fa-solid fa-file-export"></i> Export
+                    </button>
+                    <div class="pagination-text">
+                        <span id="pageCountText">0-0 of 0</span>
+                        <span class="pagination-arrows"><i class="fa-solid fa-chevron-left"></i> &nbsp; <i class="fa-solid fa-chevron-right"></i></span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="setup-table-wrapper">
+                <table class="setup-table" id="setupTable">
+                    <thead id="setupTableHead"><tr></tr></thead>
+                    <tbody id="setupTableBody"></tbody>
+                </table>
+                
+                <div class="empty-state" id="setupEmptyState">
+                    <i class="fa-solid fa-folder-open"></i>
+                    <p>No data available</p>
+                </div>
+                
+                <div id="setupLoader" style="text-align: center; padding: 50px; color: #777;">
+                    <div class="spinner"></div><p>Loading...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="setupModal">
+        <div class="modal-box" style="width: 450px;">
+            <div class="modal-header">
+                <h3 id="modalTitle" style="color: #1a73e8; margin:0;"><i class="fa-solid fa-pen-to-square"></i> Record</h3>
+                <i class="fa-solid fa-xmark close-btn" onclick="closeSetupModal()"></i>
+            </div>
+            <form id="setupForm" style="padding: 20px;">
+                <input type="hidden" id="editRecordId">
+                <div id="dynamicFormFields"></div>
+                <div style="margin-top: 20px; display: flex; justify-content: flex-end; gap: 10px;">
+                    <button type="button" class="btn btn-secondary" onclick="closeSetupModal()" style="background: white; border: 1px solid #ccc; color:#333;">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="btnSaveSetup" style="background:#1a73e8;">Apply</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="setupBulkModal">
+        <div class="modal-box" style="width: 900px; max-width: 95%;">
+            <div class="modal-header">
+                <h3 id="bulkModalTitle" style="color: #1a73e8; margin:0;"><i class="fa-solid fa-table-list"></i> Bulk Update</h3>
+                <i class="fa-solid fa-xmark close-btn" onclick="closeSetupBulkUpdateModal()"></i>
+            </div>
+            <div style="padding: 20px;">
+                <div style="max-height: 500px; overflow-x: auto; overflow-y: auto; border: 1px solid #eee; border-radius: 8px;">
+                    <table class="setup-table" style="min-width: max-content;">
+                        <thead id="setupBulkTableHead"><tr></tr></thead>
+                        <tbody id="setupBulkTableBody"></tbody>
+                    </table>
+                </div>
+                <div style="margin-top: 20px; display: flex; justify-content: flex-end; gap: 10px;">
+                    <button class="btn btn-secondary" onclick="closeSetupBulkUpdateModal()" style="background: white; border: 1px solid #ccc; color:#333;">Cancel</button>
+                    <button class="btn btn-primary" id="btnSaveBulkSetup" onclick="saveSetupBulkUpdate()" style="background:#10b981; border:none;">Save All Changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="setup.js"></script>
+</body>
+</html>

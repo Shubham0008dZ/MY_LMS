@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Members | Library System</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .bulk-input { padding: 8px; border: 1px solid #ddd; border-radius: 4px; width: 100%; outline: none; font-size: 14px; }
+        .bulk-input:focus { border-color: #3498db; }
+        .header-actions { display: flex; gap: 10px; }
+        .page-header { 
+            display: flex; justify-content: space-between; align-items: center; 
+            background: white; padding: 20px; border-radius: 8px; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 20px;
+        }
+        #memberId { background-color: #f8f9fa; cursor: not-allowed; font-weight: bold; color: #2c3e50; }
+        .expiry-badge { padding: 4px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: bold; display: inline-block; white-space: nowrap; }
+        .badge-green { background: #e8f5e9; color: #2e7d32; }
+        .badge-orange { background: #fff3cd; color: #856404; }
+        .badge-red { background: #ffebee; color: #c62828; }
+        /* Filter Button CSS */
+        .btn-filter { background: #eff6ff; color: #3b82f6; border: 1px solid #bfdbfe; font-weight: 600; padding: 8px 16px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: 0.2s; }
+        .btn-filter:hover { background: #dbeafe; }
+    </style>
+</head>
+<body class="page-body">
+
+    <div class="page-header animated-box">
+        <div class="header-text">
+            <h2 style="margin:0;"><i class="fa-solid fa-users-gear" style="color: #3498db;"></i> Manage Members</h2>
+            <p style="margin: 5px 0 0 0; color: #7f8c8d; font-size: 0.9rem;"></p>
+        </div>
+       <div class="header-actions">
+            <button class="btn btn-success" onclick="exportToExcel()" style="background-color: #27ae60; border: none; color: white;" title="Export current list to Excel">
+                <i class="fa-solid fa-file-csv"></i> Export
+            </button>
+            <button class="btn btn-primary" onclick="openMemberModal()">
+                <i class="fa-solid fa-user-plus"></i> Add Member
+            </button>
+            <button class="btn btn-success" onclick="openBulkUpdateModal()">
+                <i class="fa-solid fa-table-list"></i> Bulk Update
+            </button>
+        </div>
+    </div>
+
+    <div class="card animated-box" style="overflow-x: auto;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <!-- <h3 style="margin: 0;">Registered Members</h3> -->
+                <button class="btn-filter" onclick="openFilterModal()">
+                    <i class="fa-solid fa-filter"></i> Filters
+                </button>
+                <div style="position: relative;">
+                    <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #9ca3af;"></i>
+                    <input type="text" id="memberSearch" placeholder="Search ID or Name..." onkeyup="renderMembers()" style="padding: 8px 10px 8px 32px; border: 1px solid #ccc; border-radius: 6px; outline: none;">
+                </div>
+            </div>
+            <div style="font-size: 1rem; font-weight: bold; color: #555;">
+                Total Members: 
+                <span id="memberCountBadge" style="background: #3498db; color: white; padding: 4px 10px; border-radius: 12px; font-size: 0.9rem;">0</span>
+            </div>
+        </div>
+        <hr style="margin: 0 0 15px 0; border:0; border-top:1px solid #eee;">
+        
+        <table>
+            <thead>
+                <tr>
+                    <th>Member ID</th>
+                    <th>Full Name</th>
+                    <th>Category</th>
+                    <th>Status / Expiry</th>
+                    <th>Contact</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="memberTableBody">
+            </tbody>
+        </table>
+    </div>
+
+    <div class="modal-overlay" id="filterModal">
+        <div class="modal-box" style="width: 450px;">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-filter" style="color: #3b82f6;"></i> Advanced Filters</h3>
+                <i class="fa-solid fa-xmark close-btn" onclick="closeFilterModal()"></i>
+            </div>
+            <div style="padding: 20px;">
+                <label style="font-weight: bold; display:block; margin-bottom:10px; color:#2c3e50;">Member Category (Select Multiple)</label>
+                <div style="display: flex; gap: 15px; margin-bottom: 25px; flex-wrap:wrap; border: 1px solid #eee; padding: 10px; border-radius: 6px; background: #f8f9fa;">
+                    <label style="cursor: pointer;"><input type="checkbox" class="cat-filter" value="Student" checked> Student</label>
+                    <label style="cursor: pointer;"><input type="checkbox" class="cat-filter" value="Employee" checked> Employee</label>
+                    <label style="cursor: pointer;"><input type="checkbox" class="cat-filter" value="Guest" checked> Guest</label>
+                </div>
+
+                <label style="font-weight: bold; display:block; margin-bottom:10px; color:#2c3e50;">Membership Status</label>
+                <select id="statusFilter" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ccc; margin-bottom: 25px; outline: none;">
+                    <option value="All">All Status</option>
+                    <option value="Active">Active Only</option>
+                    <option value="Expired">Expired Only</option>
+                </select>
+
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn btn-primary" style="flex:2; background:#3b82f6; border:none;" onclick="applyFilters()">Apply Filters</button>
+                    <button class="btn btn-danger" style="flex:1; background:#e74c3c; border:none;" onclick="clearFilters()">Reset</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="memberModal">
+        <div class="modal-box" style="width: 500px;">
+            <div class="modal-header">
+                <h3 id="modalTitle"><i class="fa-solid fa-user-plus"></i> Add New Member</h3>
+                <i class="fa-solid fa-xmark close-btn" onclick="closeMemberModal()"></i>
+            </div>
+            <form id="memberForm" style="padding: 20px;">
+                <div class="form-group">
+                    <label>Member Type</label>
+                    <select id="memberType" required onchange="generateMemberID()">
+                        <option value="">-- Select Type --</option>
+                        <option value="Student">Student</option>
+                        <option value="Employee">Employee</option>
+                        <option value="Guest">Guest</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Member ID (Auto-Generated)</label>
+                    <input type="text" id="memberId" readonly placeholder="Select type first...">
+                </div>
+                <div class="form-group">
+                    <label>Full Name</label>
+                    <input type="text" id="memberName" required placeholder="e.g. Rahul Sharma">
+                </div>
+                <div class="form-group">
+                    <label>Contact Number</label>
+                    <input type="text" id="memberPhone" required placeholder="10-digit mobile number">
+                </div>
+                <div class="form-group">
+                    <label>Email Address</label>
+                    <input type="email" id="memberEmail" placeholder="example@email.com">
+                </div>
+                <div class="form-group" id="durationGroup">
+                    <label>Membership Duration</label>
+                    <select id="memberDuration" onchange="handleDurationChange()">
+                        <option value="1">1 Month</option>
+                        <option value="3">3 Months</option>
+                        <option value="6">6 Months</option>
+                        <option value="12" selected>1 Year</option>
+                        <option value="999">Lifetime</option>
+                        <option value="custom">Custom Date Range</option>
+                    </select>
+                </div>
+                <div style="display: flex; gap: 15px; margin-bottom: 15px;" id="datesGroup">
+                    <div class="form-group" style="flex: 1; margin-bottom: 0;">
+                        <label>Join Date</label>
+                        <input type="date" id="joinDate" required onchange="handleDurationChange()">
+                    </div>
+                    <div class="form-group" id="expiryDateContainer" style="flex: 1; margin-bottom: 0;">
+                        <label>Expiry Date</label>
+                        <input type="date" id="expiryDate" required oninput="document.getElementById('memberDuration').value = 'custom'">
+                    </div>
+                </div>
+                <div style="margin-top: 20px; display: flex; gap: 10px;">
+                    <button type="submit" class="btn btn-primary" style="flex: 2;">Save Member</button>
+                    <button type="button" class="btn btn-secondary" style="flex: 1;" onclick="closeMemberModal()">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="renewModal">
+        <div class="modal-box" style="width: 450px; text-align: center;">
+            <div class="modal-header" style="justify-content: center; position: relative;">
+                <h3><i class="fa-solid fa-arrows-rotate" style="color:#2ecc71;"></i> Renew Membership</h3>
+                <i class="fa-solid fa-xmark close-btn" onclick="closeRenewModal()" style="position: absolute; right: 15px; top: 15px;"></i>
+            </div>
+            <form id="renewForm" style="padding: 20px; text-align: left;">
+                <input type="hidden" id="renewMemberId">
+                <input type="hidden" id="renewOriginalJoinDate">
+                <div class="form-group">
+                    <label>Member Name</label>
+                    <input type="text" id="renewMemberName" readonly style="background:#e9ecef; font-weight:bold;">
+                </div>
+                <div class="form-group">
+                    <label>Select Renewal Duration</label>
+                    <select id="renewDuration" required onchange="handleRenewDurationChange()" style="font-weight:bold; color:#333;">
+                        <option value="1">1 Month</option>
+                        <option value="3">3 Months</option>
+                        <option value="6">6 Months</option>
+                        <option value="12" selected>1 Year</option>
+                        <option value="999">Lifetime</option>
+                        <option value="custom">Custom Date Range</option>
+                    </select>
+                </div>
+                <div class="form-group" id="renewExpiryContainer">
+                    <label>New Expiry Date</label>
+                    <input type="date" id="renewExpiryDate" required style="font-weight:bold;" oninput="document.getElementById('renewDuration').value = 'custom'">
+                </div>
+                <button type="submit" class="btn btn-success w-100" style="margin-top: 15px;"><i class="fa-solid fa-check-circle"></i> Confirm Renewal</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="bulkUpdateModal">
+        <div class="modal-box" style="width: 1200px; max-width: 95%;">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-pen-to-square"></i> Bulk Update Members</h3>
+                <i class="fa-solid fa-xmark close-btn" onclick="closeBulkUpdateModal()"></i>
+            </div>
+            <div style="padding: 20px;">
+                <div style="max-height: 500px; overflow-y: auto; border: 1px solid #eee; border-radius: 8px;">
+                    <table style="min-width: 1000px;">
+                        <thead style="position: sticky; top: 0; background: #f8f9fa; z-index: 1;">
+                            <tr>
+                                <th>ID</th>
+                                <th>Full Name</th>
+                                <th>Type</th>
+                                <th>Phone</th>
+                                <th>Duration</th>
+                                <th>Join Date</th>
+                                <th>Expiry Date</th>
+                            </tr>
+                        </thead>
+                        <tbody id="bulkUpdateTableBody"></tbody>
+                    </table>
+                </div>
+                <button class="btn btn-primary w-100" id="saveBulkBtn" onclick="saveBulkUpdate()" style="margin-top: 15px;">Save All Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="manage-member.js"></script>
+</body>
+</html>

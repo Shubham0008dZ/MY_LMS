@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Library Management System - Admin Portal</title>
+
+    <script>
+        if (sessionStorage.getItem('isLoggedIn') !== 'true') {
+            window.location.href = 'login.html';
+        }
+    </script>
+
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+
+
+
+</head>
+
+<body>
+
+    <div class="app-container">
+
+        <nav class="sidebar" id="sidebar">
+
+            <div class="sidebar-header">
+                <div class="logo-text">
+                    <i class="fa-solid fa-book-open-reader" style="color: #1a73e8; font-size: 1.5rem;"></i>
+             
+                    <span style="font-weight: 800; font-size: 1.2rem; margin-left: 10px; color: #1565c0;"> LMS </span>
+                </div>
+                <i class="fa-solid fa-bars toggle-btn" onclick="toggleSidebar()"></i>
+            </div>
+
+          <ul class="nav-links">
+    <li class="nav-item" onclick="switchTab('dashboard.html', this)" data-title="Dashboard">
+        <i class="fa-solid fa-chart-pie"></i>
+      
+        <span class="nav-text">Dashboard</span>
+    </li>
+    <li class="nav-item" onclick="switchTab('books.html', this)" data-title="Manage Books">
+        <i class="fa-solid fa-book"></i>
+        <span class="nav-text">Manage Books</span>
+    </li>
+    <li class="nav-item" onclick="switchTab('manage-member.html', this)" data-title="Manage Members">
+        <i class="fa-solid fa-users-gear"></i>
+        <span class="nav-text">Manage Members</span>
+    </li>
+    <li class="nav-item" onclick="switchTab('issue-return.html', this)" data-title="Issue & Return">
+        <i class="fa-solid fa-right-left"></i>
+       
+         <span class="nav-text">Issue & Return</span>
+    </li>
+    <li class="nav-item" onclick="switchTab('attendance.html', this)" data-title="Attendance">
+        <i class="fa-solid fa-clipboard-user"></i>
+        <span class="nav-text">Attendance</span>
+    </li>
+    <li class="nav-item" onclick="switchTab('active-issues.html', this)" data-title="Active Issues">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        <span class="nav-text">Active Issues</span>
+    </li>
+    <li class="nav-item" onclick="switchTab('setup.html', this)" data-title="Setup">
+        <i class="fa-solid fa-gears"></i>
+        <span class="nav-text">Setup</span>
+ 
+    </li>
+</ul>
+
+            <div class="sidebar-footer"
+                style="margin-top: auto;
+                padding: 20px; border-top: 1px solid #e0e0e0; display: flex; flex-direction: column;
+                gap: 15px;">
+
+                <div style="display: flex;
+                align-items: center; gap: 10px; overflow: hidden;">
+                    <div style="min-width: 35px;
+                    height: 35px; border-radius: 50%; background: linear-gradient(135deg, #1a73e8, #2575fc); color: white; display: flex; align-items: center; justify-content: center; font-weight: bold;
+                    font-size: 1.1rem;"
+                        id="userInitials">
+                        U
+                    </div>
+                    <div class="nav-text" style="white-space: nowrap;">
+        
+                        <div style="font-size: 0.9rem;
+                        font-weight: 600; color: #333;" id="displayUserName">Loading...
+                        </div>
+                        <div style="font-size: 0.75rem;
+                        color: #888;" id="displayUserRole">Role</div>
+                    </div>
+                </div>
+
+                <button onclick="logout()"
+                    style="width: 100%;
+                    padding: 10px; background: #fee2e2; color: #e74c3c; border: 1px solid #fecaca; border-radius: 6px; cursor: pointer; font-weight: 600; display: flex; align-items: center;
+                    justify-content: center; gap: 8px; transition: 0.2s;"
+                    onmouseover="this.style.background='#fecaca'" onmouseout="this.style.background='#fee2e2'">
+                    <i class="fa-solid fa-right-from-bracket"></i> <span class="nav-text">Logout</span>
+                </button>
+            </div>
+
+        </nav>
+
+        <main class="content-area">
+     
+            <iframe src="dashboard.html" id="main-frame" name="main-frame"
+                style="width: 100%;
+                height: 100%; border: none;"></iframe>
+        </main>
+
+    </div>
+
+    <script>
+        // 1. Sidebar chota/bada karne ka logic
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('collapsed');
+        }
+
+        // 2. Tab change karne ka logic (Iframe URL change karta hai)
+   
+        function switchTab(pageUrl, element) {
+            document.getElementById('main-frame').src = pageUrl;
+
+            // Saare tabs se active hatao
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            // Click hue tab par active color 
+            lagao
+            element.classList.add('active');
+        }
+
+        // 3. User ki details load karna (From Session Storage)
+        document.addEventListener("DOMContentLoaded", () => {
+            const userName = sessionStorage.getItem('userName') || 'Admin';
+            const userRole = sessionStorage.getItem('userRole') ||
+            'Librarian';
+
+            document.getElementById('displayUserName').innerText = userName;
+            document.getElementById('displayUserRole').innerText = userRole;
+            document.getElementById('userInitials').innerText = userName.charAt(0).toUpperCase();
+        });
+        // 4. Logout System
+        function logout() {
+            if (confirm("Are you sure you want to log out from the Library Portal?")) {
+                sessionStorage.clear();
+                // Browser se credentials uda do
+                window.location.href = 'login.html';
+                // Wapas lock page pe bhej do
+            }
+        }
+    </script>
+
+<script>
+        document.addEventListener("DOMContentLoaded", function() {
+            // Saare menu items ko select karo
+            const navItems = document.querySelectorAll(".nav-item");
+            const sidebar = document.querySelector(".sidebar");
+            
+
+            navItems.forEach(item => {
+                item.addEventListener("click", function() {
+                    // Jaise hi kisi par click ho, check karo menu open hai kya
+                    if (sidebar && !sidebar.classList.contains("collapsed")) {
+            
+                        // Agar open hai toh usko band kar do
+                        sidebar.classList.add("collapsed");
+                    }
+                });
+            });
+        
+});
+    </script>
+</body> </html>
+
+</body>
+
+</html>

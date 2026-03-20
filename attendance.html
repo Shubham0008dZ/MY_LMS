@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Attendance | Library System</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .desk-search { width: 100%; padding: 12px 15px; font-size: 16px; border: 1px solid #ddd; border-radius: 6px; margin-bottom: 15px; outline: none; }
+        .desk-search:focus { border-color: #3498db; box-shadow: 0 0 5px rgba(52, 152, 219, 0.3); }
+        .btn-in { background-color: #27ae60; color: white; border: none; padding: 6px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-right: 5px; }
+        .btn-in:disabled { background-color: #a5d6a7; cursor: not-allowed; opacity: 0.6; }
+        .btn-out { background-color: #e74c3c; color: white; border: none; padding: 6px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        .btn-out:disabled { background-color: #ef9a9a; cursor: not-allowed; opacity: 0.6; }
+        .badge-absent { background: #f2f2f2; color: #7f8c8d; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; }
+        .badge-present-active { background: #e8f5e9; color: #2e7d32; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; border: 1px solid #c8e6c9; }
+        .badge-present-left { background: #fff3cd; color: #856404; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; border: 1px solid #ffeeba; }
+        
+        /* 🟢 Action Buttons CSS (Edit / Delete) 🟢 */
+        .btn-edit { background-color: #f39c12; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 13px; margin-right: 5px; }
+        .btn-edit:hover { background-color: #e67e22; }
+        .btn-delete { background-color: #e74c3c; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 13px; }
+        .btn-delete:hover { background-color: #c0392b; }
+    </style>
+</head>
+<body class="page-body">
+
+    <div class="page-header animated-box">
+        <div class="header-text">
+            <h2 id="pageTitle" style="margin:0;"><i class="fa-solid fa-clipboard-user" style="color: #3498db;"></i> Attendance Records</h2>
+            <p id="pageSubtitle" style="margin: 5px 0 0 0; color: #7f8c8d; font-size: 0.9rem;">Date-wise summary of member attendance</p>
+        </div>
+        <div id="headerButtons">
+            <button class="btn btn-primary" onclick="openDatePromptModal()" style="background-color: #3498db; border: none;">
+                <i class="fa-solid fa-user-check"></i> ADD ATTENDANCE
+            </button>
+        </div>
+    </div>
+
+    <div id="historyView" class="card animated-box" style="overflow-x: auto;">
+        <h3 style="margin-top: 0; margin-bottom: 15px; border-bottom: 2px solid #eee; padding-bottom: 10px; color: #2c3e50;">
+            <i class="fa-solid fa-list"></i> Daily Attendance Summary
+        </h3>
+        <table>
+            <thead>
+                <tr style="background:#f8f9fa;">
+                    <th>Attendance Date</th>
+                    <th>Total Members Present</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="attendanceSummaryBody"></tbody>
+        </table>
+    </div>
+
+    <div id="liveDeskView" class="card animated-box" style="display: none; overflow-x: auto;">
+        <div style="background: #e3f2fd; padding: 10px 15px; border-radius: 6px; margin-bottom: 15px; font-weight: bold; color: #1565c0; display: flex; justify-content: space-between; align-items: center;">
+            <span><i class="fa-solid fa-calendar-day"></i> Marking Attendance For: <span id="displayLiveDate"></span></span>
+        </div>
+        <input type="text" id="liveSearch" class="desk-search" placeholder="🔍 Search member by ID or Name..." onkeyup="renderLiveDesk()">
+        <table>
+            <thead>
+                <tr style="background:#f4f6f7;">
+                    <th>Member ID</th>
+                    <th>Full Name</th>
+                    <th>Category</th>
+                    <th>Status</th>
+                    <th>Action (IN / OUT)</th>
+                </tr>
+            </thead>
+            <tbody id="liveDeskTableBody"></tbody>
+        </table>
+    </div>
+
+    <div class="modal-overlay" id="datePromptModal">
+        <div class="modal-box" style="width: 400px; text-align: center;">
+            <div class="modal-header" style="justify-content: center; position: relative;">
+                <h3><i class="fa-solid fa-calendar-plus" style="color:#3498db;"></i> Select Date</h3>
+                <i class="fa-solid fa-xmark close-btn" onclick="closeDatePromptModal()" style="position: absolute; right: 15px; top: 15px;"></i>
+            </div>
+            <div style="padding: 20px;">
+                <p style="margin-top: 0; color: #555; font-size: 14px;">Select the date for which you want to view or mark attendance.</p>
+                <input type="date" id="promptDateInput" class="desk-search" style="text-align: center; font-weight: bold;">
+                <button id="proceedBtn" class="btn btn-primary w-100" onclick="proceedToLiveDesk()" style="margin-top: 15px; font-size: 16px;">
+                    <i class="fa-solid fa-arrow-right-to-bracket"></i> Proceed to Desk
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="attendance.js"></script>
+</body>
+</html>

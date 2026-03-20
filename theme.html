@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Theme & Sidebar Preview</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        /* 1. CSS VARIABLES (Theme Colors) */
+        :root {
+            --sidebar-bg: #2c3e50;
+            --sidebar-text: #ffffff;
+            --main-bg: #f4f7f6;
+            --card-bg: #ffffff;
+            --text-color: #333333;
+            --border-color: #eeeeee;
+        }
+
+        [data-theme="dark"] {
+            --sidebar-bg: #1a1a1a;
+            --sidebar-text: #e0e0e0;
+            --main-bg: #121212;
+            --card-bg: #1e1e1e;
+            --text-color: #e0e0e0;
+            --border-color: #333333;
+        }
+
+        body {
+            margin: 0;
+            display: flex;
+            font-family: 'Segoe UI', sans-serif;
+            background-color: var(--main-bg);
+            color: var(--text-color);
+            transition: 0.3s;
+        }
+
+        /* 2. SIDEBAR STYLE */
+        .sidebar {
+            width: 250px;
+            height: 100vh;
+            background-color: var(--sidebar-bg);
+            color: var(--sidebar-text);
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            box-sizing: border-box;
+            position: fixed;
+        }
+
+        .sidebar h2 { font-size: 1.2rem; margin-bottom: 30px; border-bottom: 1px solid #555; padding-bottom: 10px; }
+
+        .nav-links { flex-grow: 1; }
+        .nav-links div { padding: 12px 0; cursor: pointer; opacity: 0.8; }
+        .nav-links div:hover { opacity: 1; }
+
+        /* 3. THEME TOGGLE (LOGOUT KE UPAR) */
+        .sidebar-footer {
+            border-top: 1px solid #555;
+            padding-top: 20px;
+        }
+
+        .theme-switch-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 15px; /* Logout se thoda upar */
+            padding: 10px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .logout-btn {
+            color: #ff5252;
+            cursor: pointer;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* 4. MAIN CONTENT */
+        .main-content {
+            margin-left: 250px;
+            padding: 40px;
+            width: 100%;
+        }
+
+        .card {
+            background: var(--card-bg);
+            padding: 25px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <h2>LMS Dashboard</h2>
+        
+        <div class="nav-links">
+            <div><i class="fa-solid fa-house"></i> Home</div>
+            <div><i class="fa-solid fa-book"></i> Manage Books</div>
+            <div><i class="fa-solid fa-users"></i> Members</div>
+        </div>
+
+        <div class="sidebar-footer">
+            <div class="theme-switch-wrapper" id="theme-toggle">
+                <span id="theme-text">Dark Mode</span>
+                <i class="fa-solid fa-moon" id="theme-icon"></i>
+            </div>
+
+            <div class="logout-btn">
+                <i class="fa-solid fa-right-from-bracket"></i> Logout
+            </div>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="card">
+            <h1>Welcome to Library System</h1>
+            <p>Theme change karke dekho, pura dashboard badal jayega!</p>
+            <div style="margin-top:20px; padding:15px; border:1px solid var(--border-color); border-radius:8px;">
+                Sample Item List
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const themeToggle = document.getElementById('theme-toggle');
+        const themeIcon = document.getElementById('theme-icon');
+        const themeText = document.getElementById('theme-text');
+        const htmlElement = document.documentElement;
+
+        // Check for saved theme
+        const savedTheme = localStorage.getItem('lms-theme') || 'light';
+        applyTheme(savedTheme);
+
+        themeToggle.addEventListener('click', () => {
+            const currentTheme = htmlElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            applyTheme(newTheme);
+        });
+
+        function applyTheme(theme) {
+            htmlElement.setAttribute('data-theme', theme);
+            localStorage.setItem('lms-theme', theme);
+            
+            if (theme === 'dark') {
+                themeIcon.className = 'fa-solid fa-sun';
+                themeText.innerText = 'Light Mode';
+                themeToggle.style.background = 'rgba(255,255,0,0.2)'; // Yellowish tint for dark mode
+            } else {
+                themeIcon.className = 'fa-solid fa-moon';
+                themeText.innerText = 'Dark Mode';
+                themeToggle.style.background = 'rgba(255,255,255,0.1)';
+            }
+        }
+    </script>
+</body>
+</html>
