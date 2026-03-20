@@ -565,7 +565,7 @@ if (emailForm) {
             <div style="background-color: #F3F4F6; padding: 20px 10px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
                 <div style="max-width: 500px; margin: 0 auto; background-color: #FFFFFF; border-radius: 8px; overflow: hidden; border: 1px solid #E5E7EB;">
                     <div style="background-color: #3B82F6; padding: 15px 20px; text-align: center; border-bottom: 3px solid #2563EB;">
-                        <h2 style="color: #FFFFFF; margin: 0; font-size: 20px; font-weight: 600;">📚 Library Notice</h2>
+                        <h2 style="color: #FFFFFF; margin: 0; font-size: 20px; font-weight: 600;"> Library Notice</h2>
                     </div>
                     <div style="padding: 20px;">
                         <p style="font-size: 14px; margin: 0 0 10px 0; color: #374151;"><strong>Dear ${member.name},</strong></p>
