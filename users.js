@@ -13,13 +13,22 @@ document.addEventListener("DOMContentLoaded", () => {
     renderUsers();
 });
 
+// 🟢 STRICT DD-MM-YYYY DATE FORMAT ENFORCEMENT 🟢
+function getFormattedDate() {
+    let d = new Date();
+    let dd = String(d.getDate()).padStart(2, '0');
+    let mm = String(d.getMonth() + 1).padStart(2, '0');
+    let yyyy = d.getFullYear();
+    return `${dd}-${mm}-${yyyy}`;
+}
+
 function initializeDatabase() {
     let db = JSON.parse(localStorage.getItem('lms_users_db'));
     if (!db) {
         db = [{ 
             name: "Shubham (Owner)", email: MASTER_EMAIL, userId: "admin",
             password: "1122", isSuperAdmin: true, dbAttached: true, tenantApiUrl: API_URL,
-            dateAdded: new Date().toLocaleDateString() 
+            dateAdded: getFormattedDate() 
         }];
         localStorage.setItem('lms_users_db', JSON.stringify(db));
     }
@@ -95,7 +104,6 @@ async function addUser(e) {
     finalAddBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
     finalAddBtn.disabled = true;
 
-    // By default Role sheet me "User" bankar jayega
     const payload = {
         action: 'addUser', name: nameInput, email: emailInput, username: idInput, password: passInput, role: 'User'
     };
@@ -108,7 +116,7 @@ async function addUser(e) {
             const newUser = {
                 name: nameInput, email: emailInput, userId: idInput, password: passInput, 
                 isSuperAdmin: false, dbAttached: false, tenantApiUrl: "",
-                dateAdded: new Date().toLocaleDateString()
+                dateAdded: getFormattedDate()
             };
 
             db.push(newUser);
@@ -184,20 +192,17 @@ function renderUsers() {
     tbody.innerHTML = html;
 }
 
-// 🟢 NEW: TOGGLE NOW SYNC WITH GOOGLE SHEET API 🟢
 async function toggleSuperAdmin(email, isNowAdmin) {
     let db = JSON.parse(localStorage.getItem('lms_users_db')) || [];
     let userIndex = db.findIndex(u => u.email === email);
     
     if(userIndex !== -1) {
-        // Update Local Storage
         db[userIndex].isSuperAdmin = isNowAdmin;
         localStorage.setItem('lms_users_db', JSON.stringify(db));
         renderUsers();
         
         showToast(isNowAdmin ? "Promoting in Database..." : "Demoting in Database...");
 
-        // Fire API Call to change Role in Google Sheet!
         const payload = {
             action: 'changeRole',
             email: email,
